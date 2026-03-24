@@ -1387,13 +1387,17 @@ function formatDate(dateStr) {
 // INIT
 // ============================================================
 window.addEventListener('load', async () => {
-  setTimeout(() => {
+  const hideLoading = () => {
     document.getElementById('loading-overlay').style.opacity = '0';
     setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 400);
-  }, 800);
+  };
+
+  // Always hide loading after max 2 seconds no matter what
+  setTimeout(hideLoading, 2000);
 
   const apiUrl = getApiUrl();
   if (!apiUrl) {
+    hideLoading();
     document.getElementById('setup-screen').style.display = 'flex';
     return;
   }
@@ -1401,12 +1405,20 @@ window.addEventListener('load', async () => {
   // Warm up server immediately to reduce cold start
   warmupServer();
 
-  const savedUser = localStorage.getItem('petSiamOwnerUser');
-  const savedToken = localStorage.getItem('petSiamOwnerToken');
-  if (savedUser && savedToken) {
-    currentUser = JSON.parse(savedUser);
-    await startApp();
-  } else {
+  try {
+    const savedUser = localStorage.getItem('petSiamOwnerUser');
+    const savedToken = localStorage.getItem('petSiamOwnerToken');
+    if (savedUser && savedToken) {
+      currentUser = JSON.parse(savedUser);
+      await startApp();
+    } else {
+      hideLoading();
+      document.getElementById('login-screen').style.display = 'flex';
+    }
+  } catch (e) {
+    localStorage.removeItem('petSiamOwnerToken');
+    localStorage.removeItem('petSiamOwnerUser');
+    hideLoading();
     document.getElementById('login-screen').style.display = 'flex';
   }
 });
